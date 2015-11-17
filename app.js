@@ -12,8 +12,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-
-
 mongoose.connect('mongodb://localhost:27017/authentication-practise');
 
 // Only render errors in development
@@ -28,7 +26,7 @@ if (app.get('env') === 'development') {
 }
 
 app.post("/signup", function(req, res) {
-  var userObject = new User(req.body.user);
+  var userParams = req.body.user;
 
   if(!userParams.email)
     {return res.status(401).send({message: "Missing Email"});}
@@ -39,6 +37,9 @@ app.post("/signup", function(req, res) {
   if(!userParams.password !== userParams.passwordConfirmation)
     {return res.status(401).send({message: "Password not match"});}
 
+  User.findOne({ email: userParams.email }, function(err, user) {
+    if(!user){return res.status(401).send({message: "Email Already Taken"});}
+
   var userObject = new User(userParams);
   userObject.save(function(err, user) {
     if(err){
@@ -47,13 +48,13 @@ app.post("/signup", function(req, res) {
       return res.status(200).send({message: "user created"});
     }
   });
-})
+});
 
 app.post("/signin", function(req, res) {
   var userParams = req.body.user;
 
   User.findOne({ email: userParams.email }, function(err, user) {
-    if(!user){return res.status(404).send({message: "No user found"});}
+    if(!user){return res.status(404).send({message: "Email is Wrong"});}
 
     user.authenticate(userParams.password, function(err, isMatch) {
       if (err) throw err;
@@ -66,6 +67,5 @@ app.post("/signin", function(req, res) {
     });
   });
 });
-
 
 app.listen(3000);
